@@ -1,0 +1,6 @@
+obj/
+libs/
+jni/
+gen/
+bin/
+cp.sh
