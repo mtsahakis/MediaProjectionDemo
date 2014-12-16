@@ -124,7 +124,7 @@ public class ScreenCaptureImageActivity extends Activity {
 			        	        uncomment this if you want either PNG or JPEG output
 			        	        note that if you select JPEG compression takes up more time
 			        	        */
-			        	        //bitmap.compress(CompressFormat.PNG, 100, fos);
+			        	        // bitmap.compress(CompressFormat.JPEG, 100, fos);
 			        	        bitmap.compress(CompressFormat.PNG, 100, fos);
 			        	        
 			        	        // for statistics
