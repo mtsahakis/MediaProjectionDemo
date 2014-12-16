@@ -119,8 +119,15 @@ public class ScreenCaptureImageActivity extends Activity {
 							    bitmap.copyPixelsFromBuffer(imageBuffer);
 							    // write bitmap to a file
 			        	        fos = new FileOutputStream(getFilesDir() + "/myscreen.png");
-			        	        bitmap.compress(CompressFormat.JPEG, 100, fos);
-							    
+			        	        
+			        	        /**
+			        	        uncomment this if you want either PNG or JPEG output
+			        	        note that if you select JPEG compression takes up more time
+			        	        */
+			        	        
+			        	        //bitmap.compress(CompressFormat.PNG, 100, fos);
+			        	        bitmap.compress(CompressFormat.PNG, 100, fos);
+			        	        
 			        	        // for statistics
 			        	        imagesProduced++;
 			        	        final long now = System.currentTimeMillis();
