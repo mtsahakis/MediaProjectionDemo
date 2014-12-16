@@ -3,13 +3,12 @@ package com.mtsahakis.mediaprojectiondemo;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
@@ -34,29 +33,12 @@ public class ScreenCaptureImageActivity extends Activity {
 	private static final String TAG = ScreenCaptureImageActivity.class.getName();
 	private static final int REQUEST_CODE= 100;
 	
-	/**
-	 * mapping PIXEL FORMATS from nsutils.cpp
-	 * 
-	 	static int bytesPerPixel(uint32_t f)
-		{
-				// .. omitting
-		        case 1: // PIXEL_FORMAT_RGBA_8888 (4x8-bit ARGB)
-		        case 2: // PIXEL_FORMAT_RGBX_8888 (3x8-bit RGB stored in 32-bit chunks)
-		        case 5: // PIXEL_FORMAT_BGRA_8888 (4x8-bit BGRA)
-		                return 4;
-		        // .. omitting
-		}
-	 */
-	private static final int PIXEL_FORMAT = 4;
-	private static final int HEADER_BUFFER_CAPACITY = 12;
-	
 	private MediaProjectionManager mProjectionManager;
 	private MediaProjection mProjection;
 	private ImageReader mImageReader;
 	private Handler mHandler = new Handler(Looper.getMainLooper());
 	private int imagesProduced;
 	private long startTimeInMillis;
-	private Buffer mHeaderBuffer;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +98,6 @@ public class ScreenCaptureImageActivity extends Activity {
 				final int width = size.x;
 				final int height = size.y;
 				
-				mHeaderBuffer = createImageHeaderBuffer(width, height);
 				mImageReader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
 				mProjection.createVirtualDisplay("screencap", width, height, density, flags, mImageReader.getSurface(), new VirtualDisplayCallback(), mHandler);
 				mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
@@ -134,11 +115,11 @@ public class ScreenCaptureImageActivity extends Activity {
 							    final Buffer imageBuffer = planes[0].getBuffer().rewind();
 							    
 							    // create bitmap
-							    // bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-							    // bitmap.copyPixelsFromBuffer(imageBuffer);
+							    bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+							    bitmap.copyPixelsFromBuffer(imageBuffer);
 							    // write bitmap to a file
-			        	        // fos = new FileOutputStream(getFilesDir() + "/myscreen.png");
-			        	        // bitmap.compress(CompressFormat.JPEG, 100, fos);
+			        	        fos = new FileOutputStream(getFilesDir() + "/myscreen.png");
+			        	        bitmap.compress(CompressFormat.JPEG, 100, fos);
 							    
 			        	        // for statistics
 			        	        imagesProduced++;
@@ -172,10 +153,6 @@ public class ScreenCaptureImageActivity extends Activity {
     	}
     	
     	super.onActivityResult(requestCode, resultCode, data);
-    }
-    
-    private Buffer createImageHeaderBuffer(final int width, final int height) {
-    	return ByteBuffer.allocate(HEADER_BUFFER_CAPACITY).order(ByteOrder.LITTLE_ENDIAN).putInt(width).putInt(height).putInt(PIXEL_FORMAT).rewind();
     }
     
     private void startProjection() {
