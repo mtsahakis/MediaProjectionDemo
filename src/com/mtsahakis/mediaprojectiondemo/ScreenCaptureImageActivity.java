@@ -3,6 +3,8 @@ package com.mtsahakis.mediaprojectiondemo;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,6 +20,7 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
@@ -33,12 +36,29 @@ public class ScreenCaptureImageActivity extends Activity {
 	private static final String TAG = ScreenCaptureImageActivity.class.getName();
 	private static final int REQUEST_CODE= 100;
 	
+	/**
+	 * mapping PIXEL FORMATS from nsutils.cpp
+	 * 
+	 	static int bytesPerPixel(uint32_t f)
+		{
+				// .. omitting
+		        case 1: // PIXEL_FORMAT_RGBA_8888 (4x8-bit ARGB)
+		        case 2: // PIXEL_FORMAT_RGBX_8888 (3x8-bit RGB stored in 32-bit chunks)
+		        case 5: // PIXEL_FORMAT_BGRA_8888 (4x8-bit BGRA)
+		                return 4;
+		        // .. omitting
+		}
+	 */
+	private static final int PIXEL_FORMAT = 4;
+	private static final int HEADER_BUFFER_CAPACITY = 12;
+	
 	private MediaProjectionManager mProjectionManager;
 	private MediaProjection mProjection;
 	private ImageReader mImageReader;
 	private Handler mHandler = new Handler(Looper.getMainLooper());
 	private int imagesProduced;
 	private long startTimeInMillis;
+	private Buffer mHeaderBuffer;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +69,7 @@ public class ScreenCaptureImageActivity extends Activity {
 	    mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 	    
 	    // start projection
-	    final Button startButton = (Button)findViewById(R.id.startButton);
+	    Button startButton = (Button)findViewById(R.id.startButton);
 	    startButton.setOnClickListener(new OnClickListener() {
 			
 			@Override
@@ -59,7 +79,7 @@ public class ScreenCaptureImageActivity extends Activity {
 		});
 	    
 	    // stop projection
-	    final Button stopButton = (Button)findViewById(R.id.stopButton);
+	    Button stopButton = (Button)findViewById(R.id.stopButton);
 	    stopButton.setOnClickListener(new OnClickListener() {
 			
 			@Override
@@ -89,15 +109,18 @@ public class ScreenCaptureImageActivity extends Activity {
     		mProjection = mProjectionManager.getMediaProjection(resultCode, data);
     		
 			if (mProjection != null) {
-				final DisplayMetrics metrics = getResources().getDisplayMetrics();
-				final int density = metrics.densityDpi;
-				final int flags = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
-				final Display display = getWindowManager().getDefaultDisplay();
-				final Point size = new Point();
+				final String STORE_DIRECTORY = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/screenshots/";
+				
+				DisplayMetrics metrics = getResources().getDisplayMetrics();
+				int density = metrics.densityDpi;
+				int flags = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
+				Display display = getWindowManager().getDefaultDisplay();
+				Point size = new Point();
 				display.getSize(size);
 				final int width = size.x;
 				final int height = size.y;
 				
+				mHeaderBuffer = createImageHeaderBuffer(width, height);
 				mImageReader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
 				mProjection.createVirtualDisplay("screencap", width, height, density, flags, mImageReader.getSurface(), new VirtualDisplayCallback(), mHandler);
 				mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
@@ -111,25 +134,20 @@ public class ScreenCaptureImageActivity extends Activity {
 						try {
 							image = mImageReader.acquireLatestImage();
 							if (image != null) {
-								final Image.Plane[] planes = image.getPlanes();
-							    final Buffer imageBuffer = planes[0].getBuffer().rewind();
+								Image.Plane[] planes = image.getPlanes();
+							    Buffer imageBuffer = planes[0].getBuffer().rewind();
 							    
 							    // create bitmap
 							    bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 							    bitmap.copyPixelsFromBuffer(imageBuffer);
 							    // write bitmap to a file
-			        	        fos = new FileOutputStream(getFilesDir() + "/myscreen.png");
-			        	        
-			        	        /**
-			        	        uncomment this if you want either PNG or JPEG output
-			        	        */
+			        	        fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + imagesProduced + ".png");
 			        	        bitmap.compress(CompressFormat.JPEG, 100, fos);
-			        	        //bitmap.compress(CompressFormat.PNG, 100, fos);
-			        	        
+							    
 			        	        // for statistics
 			        	        imagesProduced++;
-			        	        final long now = System.currentTimeMillis();
-			                    final long sampleTime = now - startTimeInMillis;
+			        	        long now = System.currentTimeMillis();
+			                    long sampleTime = now - startTimeInMillis;
 			                    Log.e(TAG, "produced images at rate: " + (imagesProduced/(sampleTime/1000.0f)) + " per sec");
 							}
 							
@@ -144,12 +162,13 @@ public class ScreenCaptureImageActivity extends Activity {
 	        	            	}
 	        	            }
 	        	        	
-	        	        	if (bitmap!=null)
+	        	        	if (bitmap!=null) {
 	        	        		bitmap.recycle();
+	        	        	}
 	        	        	
-	        	        	if (image!=null)
+	        	        	if (image!=null) {
 								image.close();
-	        	        		
+	        	        	}	
 	        	        }
 					}
     				
@@ -158,6 +177,10 @@ public class ScreenCaptureImageActivity extends Activity {
     	}
     	
     	super.onActivityResult(requestCode, resultCode, data);
+    }
+    
+    private Buffer createImageHeaderBuffer(int width, int height) {
+    	return ByteBuffer.allocate(HEADER_BUFFER_CAPACITY).order(ByteOrder.LITTLE_ENDIAN).putInt(width).putInt(height).putInt(PIXEL_FORMAT).rewind();
     }
     
     private void startProjection() {
@@ -192,7 +215,5 @@ public class ScreenCaptureImageActivity extends Activity {
 			super.onStopped();
 			Log.e(TAG, "VirtualDisplayCallback: onStopped");
 		}
-    	
     }
-    
 }
