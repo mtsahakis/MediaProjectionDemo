@@ -36,19 +36,6 @@ public class ScreenCaptureImageActivity extends Activity {
 	private static final String TAG = ScreenCaptureImageActivity.class.getName();
 	private static final int REQUEST_CODE= 100;
 	
-	/**
-	 * mapping PIXEL FORMATS from nsutils.cpp
-	 * 
-	 	static int bytesPerPixel(uint32_t f)
-		{
-				// .. omitting
-		        case 1: // PIXEL_FORMAT_RGBA_8888 (4x8-bit ARGB)
-		        case 2: // PIXEL_FORMAT_RGBX_8888 (3x8-bit RGB stored in 32-bit chunks)
-		        case 5: // PIXEL_FORMAT_BGRA_8888 (4x8-bit BGRA)
-		                return 4;
-		        // .. omitting
-		}
-	 */
 	private static final int PIXEL_FORMAT = 4;
 	private static final int HEADER_BUFFER_CAPACITY = 12;
 	
