@@ -11,7 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.ImageFormat;
+import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -108,7 +108,7 @@ public class ScreenCaptureImageActivity extends Activity {
 				final int height = size.y;
 				
 				mHeaderBuffer = createImageHeaderBuffer(width, height);
-				mImageReader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+				mImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
 				mProjection.createVirtualDisplay("screencap", width, height, density, flags, mImageReader.getSurface(), new VirtualDisplayCallback(), mHandler);
 				mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
     				
