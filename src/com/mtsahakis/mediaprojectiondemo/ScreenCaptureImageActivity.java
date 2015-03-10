@@ -1,5 +1,6 @@
 package com.mtsahakis.mediaprojectiondemo;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.Buffer;
@@ -42,7 +43,7 @@ public class ScreenCaptureImageActivity extends Activity {
 	private MediaProjectionManager mProjectionManager;
 	private MediaProjection mProjection;
 	private ImageReader mImageReader;
-	private Handler mHandler = new Handler(Looper.getMainLooper());
+	private Handler mHandler;
 	private int imagesProduced;
 	private long startTimeInMillis;
 	private Buffer mHeaderBuffer;
@@ -97,6 +98,14 @@ public class ScreenCaptureImageActivity extends Activity {
     		
 			if (mProjection != null) {
 				final String STORE_DIRECTORY = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/screenshots/";
+				File storeDirectory = new File(STORE_DIRECTORY);
+                if(!storeDirectory.exists()) {
+                    boolean success = storeDirectory.mkdirs();
+                    if(!success) {
+                        Log.e(TAG, "failed to create file storage directory.");
+                        return;
+                    }
+                }
 				
 				DisplayMetrics metrics = getResources().getDisplayMetrics();
 				int density = metrics.densityDpi;
