@@ -3,4 +3,8 @@ libs/
 jni/
 gen/
 bin/
-cp.sh
+.gradle
+local.properties
+.idea/workspace.xml
+.idea/libraries
+build
