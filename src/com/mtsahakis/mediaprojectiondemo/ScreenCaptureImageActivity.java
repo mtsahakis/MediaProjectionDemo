@@ -34,12 +34,14 @@ public class ScreenCaptureImageActivity extends Activity {
 	private static final String     TAG = ScreenCaptureImageActivity.class.getName();
 	private static final int        REQUEST_CODE= 100;
     private static MediaProjection  MEDIA_PROJECTION;
+    private static String           STORE_DIRECTORY;
+    private static int              IMAGES_PRODUCED;
 
     private MediaProjectionManager  mProjectionManager;
 	private ImageReader             mImageReader;
 	private Handler                 mHandler;
-	private int                     mImagesProduced;
-	private long                    mStartTimeInMillis;
+    private int                     mWidth;
+    private int                     mHeight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,18 +81,64 @@ public class ScreenCaptureImageActivity extends Activity {
 	    	}
 	    }.start();
     }
+
+    private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Image image = null;
+            FileOutputStream fos = null;
+            Bitmap bitmap = null;
+
+            try {
+                image = mImageReader.acquireLatestImage();
+                if (image != null) {
+                    Image.Plane[] planes = image.getPlanes();
+                    ByteBuffer buffer = planes[0].getBuffer();
+                    int pixelStride = planes[0].getPixelStride();
+                    int rowStride = planes[0].getRowStride();
+                    int rowPadding = rowStride - pixelStride * mWidth;
+
+                    // create bitmap
+                    bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
+                    bitmap.copyPixelsFromBuffer(buffer);
+
+                    // write bitmap to a file
+                    fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + IMAGES_PRODUCED + ".png");
+                    bitmap.compress(CompressFormat.JPEG, 100, fos);
+
+                    IMAGES_PRODUCED++;
+                    Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fos!=null) {
+                    try {
+                        fos.close();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
+
+                if (bitmap!=null) {
+                    bitmap.recycle();
+                }
+
+                if (image!=null) {
+                    image.close();
+                }
+            }
+        }
+    }
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if (requestCode == REQUEST_CODE) {
-    		// for statistics -- init
-    		mImagesProduced = 0;
-    		mStartTimeInMillis = System.currentTimeMillis();
-
-            MEDIA_PROJECTION = mProjectionManager.getMediaProjection(resultCode, data);
+    		MEDIA_PROJECTION = mProjectionManager.getMediaProjection(resultCode, data);
     		
 			if (MEDIA_PROJECTION != null) {
-				final String STORE_DIRECTORY = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/screenshots/";
+				STORE_DIRECTORY = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/screenshots/";
 				File storeDirectory = new File(STORE_DIRECTORY);
                 if(!storeDirectory.exists()) {
                     boolean success = storeDirectory.mkdirs();
@@ -106,66 +154,12 @@ public class ScreenCaptureImageActivity extends Activity {
 				Display display = getWindowManager().getDefaultDisplay();
 				Point size = new Point();
 				display.getSize(size);
-				final int width = size.x;
-				final int height = size.y;
-				
-				mImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
-                MEDIA_PROJECTION.createVirtualDisplay(   "screencap", width, height, density, flags,
-                                                    mImageReader.getSurface(), null, mHandler);
-				mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-    				
-    				@Override
-					public void onImageAvailable(ImageReader reader) {
-    					Image image = null;
-						FileOutputStream fos = null;
-						Bitmap bitmap = null;
-						
-						try {
-							image = mImageReader.acquireLatestImage();
-							if (image != null) {
-								Image.Plane[] planes = image.getPlanes();
-								ByteBuffer buffer = planes[0].getBuffer();
-								int pixelStride = planes[0].getPixelStride();
-								int rowStride = planes[0].getRowStride();
-								int rowPadding = rowStride - pixelStride * width;
-									
-								// create bitmap
-								bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
-								bitmap.copyPixelsFromBuffer(buffer);
-								
-							    // write bitmap to a file
-			        	        fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + mImagesProduced + ".png");
-			        	        bitmap.compress(CompressFormat.JPEG, 100, fos);
-							    
-			        	        // for statistics
-			        	        mImagesProduced++;
-			        	        long now = System.currentTimeMillis();
-			                    long sampleTime = now - mStartTimeInMillis;
-			                    Log.e(TAG, "produced images at rate: " + (mImagesProduced /(sampleTime/1000.0f)) + " per sec");
-							}
-							
-						} catch (Exception e) {
-							e.printStackTrace();
-						} finally {
-	        	        	if (fos!=null) {
-	        	        		try {
-	        	        			fos.close();
-	        	        		} catch (IOException ioe) { 
-	        	        			ioe.printStackTrace();
-	        	            	}
-	        	            }
-	        	        	
-	        	        	if (bitmap!=null) {
-	        	        		bitmap.recycle();
-	        	        	}
-	        	        	
-	        	        	if (image!=null) {
-								image.close();
-	        	        	}	
-	        	        }
-					}
-    				
-    			}, mHandler);
+				mWidth = size.x;
+				mHeight = size.y;
+
+				mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
+                MEDIA_PROJECTION.createVirtualDisplay("screencap", mWidth, mHeight, density, flags, mImageReader.getSurface(), null, mHandler);
+				mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), mHandler);
     		}
     	}
     }
