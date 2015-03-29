@@ -131,11 +131,15 @@ public class ScreenCaptureImageActivity extends Activity {
 							image = mImageReader.acquireLatestImage();
 							if (image != null) {
 								Image.Plane[] planes = image.getPlanes();
-							    Buffer imageBuffer = planes[0].getBuffer().rewind();
-							    
-							    // create bitmap
-							    bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-							    bitmap.copyPixelsFromBuffer(imageBuffer);
+								ByteBuffer buffer = planes[0].getBuffer();
+								int pixelStride = planes[0].getPixelStride();
+								int rowStride = planes[0].getRowStride();
+								int rowPadding = rowStride - pixelStride * width;
+									
+								// create bitmap
+								bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
+								bitmap.copyPixelsFromBuffer(buffer);
+								
 							    // write bitmap to a file
 			        	        fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + imagesProduced + ".png");
 			        	        bitmap.compress(CompressFormat.JPEG, 100, fos);
