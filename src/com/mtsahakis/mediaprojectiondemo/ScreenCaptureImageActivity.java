@@ -32,14 +32,14 @@ import java.nio.ByteBuffer;
 public class ScreenCaptureImageActivity extends Activity {
 	
 	private static final String TAG = ScreenCaptureImageActivity.class.getName();
-	private static final int REQUEST_CODE= 100;
+	private static final int    REQUEST_CODE= 100;
 	
-	private MediaProjectionManager mProjectionManager;
-	private MediaProjection mProjection;
-	private ImageReader mImageReader;
-	private Handler mHandler;
-	private int imagesProduced;
-	private long startTimeInMillis;
+	private MediaProjectionManager  mProjectionManager;
+	private MediaProjection         mProjection;
+	private ImageReader             mImageReader;
+	private Handler                 mHandler;
+	private int                     mImagesProduced;
+	private long                    mStartTimeInMillis;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +84,8 @@ public class ScreenCaptureImageActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if (requestCode == REQUEST_CODE) {
     		// for statistics -- init
-    		imagesProduced = 0;
-    		startTimeInMillis = System.currentTimeMillis();
+    		mImagesProduced = 0;
+    		mStartTimeInMillis = System.currentTimeMillis();
     		
     		mProjection = mProjectionManager.getMediaProjection(resultCode, data);
     		
@@ -134,14 +134,14 @@ public class ScreenCaptureImageActivity extends Activity {
 								bitmap.copyPixelsFromBuffer(buffer);
 								
 							    // write bitmap to a file
-			        	        fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + imagesProduced + ".png");
+			        	        fos = new FileOutputStream(STORE_DIRECTORY + "/myscreen_" + mImagesProduced + ".png");
 			        	        bitmap.compress(CompressFormat.JPEG, 100, fos);
 							    
 			        	        // for statistics
-			        	        imagesProduced++;
+			        	        mImagesProduced++;
 			        	        long now = System.currentTimeMillis();
-			                    long sampleTime = now - startTimeInMillis;
-			                    Log.e(TAG, "produced images at rate: " + (imagesProduced/(sampleTime/1000.0f)) + " per sec");
+			                    long sampleTime = now - mStartTimeInMillis;
+			                    Log.e(TAG, "produced images at rate: " + (mImagesProduced /(sampleTime/1000.0f)) + " per sec");
 							}
 							
 						} catch (Exception e) {
@@ -168,8 +168,6 @@ public class ScreenCaptureImageActivity extends Activity {
     			}, mHandler);
     		}
     	}
-    	
-    	super.onActivityResult(requestCode, resultCode, data);
     }
     
     private void startProjection() {
@@ -180,7 +178,7 @@ public class ScreenCaptureImageActivity extends Activity {
     	mHandler.post(new Runnable() {
             @Override
             public void run() {
-                mProjection.stop();   
+                if(mProjection != null) mProjection.stop();
             }
     	});
     }
