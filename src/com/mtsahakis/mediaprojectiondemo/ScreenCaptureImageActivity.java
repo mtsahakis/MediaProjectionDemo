@@ -31,11 +31,11 @@ import java.nio.ByteBuffer;
 
 public class ScreenCaptureImageActivity extends Activity {
 	
-	private static final String TAG = ScreenCaptureImageActivity.class.getName();
-	private static final int    REQUEST_CODE= 100;
-	
-	private MediaProjectionManager  mProjectionManager;
-	private MediaProjection         mProjection;
+	private static final String     TAG = ScreenCaptureImageActivity.class.getName();
+	private static final int        REQUEST_CODE= 100;
+    private static MediaProjection  MEDIA_PROJECTION;
+
+    private MediaProjectionManager  mProjectionManager;
 	private ImageReader             mImageReader;
 	private Handler                 mHandler;
 	private int                     mImagesProduced;
@@ -86,10 +86,10 @@ public class ScreenCaptureImageActivity extends Activity {
     		// for statistics -- init
     		mImagesProduced = 0;
     		mStartTimeInMillis = System.currentTimeMillis();
+
+            MEDIA_PROJECTION = mProjectionManager.getMediaProjection(resultCode, data);
     		
-    		mProjection = mProjectionManager.getMediaProjection(resultCode, data);
-    		
-			if (mProjection != null) {
+			if (MEDIA_PROJECTION != null) {
 				final String STORE_DIRECTORY = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/screenshots/";
 				File storeDirectory = new File(STORE_DIRECTORY);
                 if(!storeDirectory.exists()) {
@@ -110,7 +110,7 @@ public class ScreenCaptureImageActivity extends Activity {
 				final int height = size.y;
 				
 				mImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
-				mProjection.createVirtualDisplay(   "screencap", width, height, density, flags,
+                MEDIA_PROJECTION.createVirtualDisplay(   "screencap", width, height, density, flags,
                                                     mImageReader.getSurface(), null, mHandler);
 				mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
     				
@@ -178,7 +178,7 @@ public class ScreenCaptureImageActivity extends Activity {
     	mHandler.post(new Runnable() {
             @Override
             public void run() {
-                if(mProjection != null) mProjection.stop();
+                if(MEDIA_PROJECTION != null) MEDIA_PROJECTION.stop();
             }
     	});
     }
