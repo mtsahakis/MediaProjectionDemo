@@ -1,12 +1,5 @@
 package com.mtsahakis.mediaprojectiondemo;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -15,7 +8,6 @@ import android.graphics.Bitmap.CompressFormat;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.projection.MediaProjection;
@@ -31,14 +23,16 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 
 public class ScreenCaptureImageActivity extends Activity {
 	
 	private static final String TAG = ScreenCaptureImageActivity.class.getName();
 	private static final int REQUEST_CODE= 100;
-	
-	private static final int PIXEL_FORMAT = 4;
-	private static final int HEADER_BUFFER_CAPACITY = 12;
 	
 	private MediaProjectionManager mProjectionManager;
 	private MediaProjection mProjection;
@@ -46,8 +40,7 @@ public class ScreenCaptureImageActivity extends Activity {
 	private Handler mHandler;
 	private int imagesProduced;
 	private long startTimeInMillis;
-	private Buffer mHeaderBuffer;
-	
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,7 +58,7 @@ public class ScreenCaptureImageActivity extends Activity {
 				startProjection();
 			}
 		});
-	    
+
 	    // stop projection
 	    Button stopButton = (Button)findViewById(R.id.stopButton);
 	    stopButton.setOnClickListener(new OnClickListener() {
@@ -116,9 +109,9 @@ public class ScreenCaptureImageActivity extends Activity {
 				final int width = size.x;
 				final int height = size.y;
 				
-				mHeaderBuffer = createImageHeaderBuffer(width, height);
 				mImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
-				mProjection.createVirtualDisplay("screencap", width, height, density, flags, mImageReader.getSurface(), new VirtualDisplayCallback(), mHandler);
+				mProjection.createVirtualDisplay(   "screencap", width, height, density, flags,
+                                                    mImageReader.getSurface(), null, mHandler);
 				mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
     				
     				@Override
@@ -179,10 +172,6 @@ public class ScreenCaptureImageActivity extends Activity {
     	super.onActivityResult(requestCode, resultCode, data);
     }
     
-    private Buffer createImageHeaderBuffer(int width, int height) {
-    	return ByteBuffer.allocate(HEADER_BUFFER_CAPACITY).order(ByteOrder.LITTLE_ENDIAN).putInt(width).putInt(height).putInt(PIXEL_FORMAT).rewind();
-    }
-    
     private void startProjection() {
     	startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
     }
@@ -194,26 +183,5 @@ public class ScreenCaptureImageActivity extends Activity {
                 mProjection.stop();   
             }
     	});
-    }  
-     
-    private class VirtualDisplayCallback extends VirtualDisplay.Callback {
-
-		@Override
-		public void onPaused() {
-			super.onPaused();
-			Log.e(TAG, "VirtualDisplayCallback: onPaused");
-		}
-
-		@Override
-		public void onResumed() {
-			super.onResumed();
-			Log.e(TAG, "VirtualDisplayCallback: onResumed");
-		}
-
-		@Override
-		public void onStopped() {
-			super.onStopped();
-			Log.e(TAG, "VirtualDisplayCallback: onStopped");
-		}
     }
 }
