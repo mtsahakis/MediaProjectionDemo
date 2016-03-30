@@ -44,4 +44,4 @@ Thumbs.db
 .idea/misc.xml
 
 # add app.iml file
-app.iml
+*.iml
