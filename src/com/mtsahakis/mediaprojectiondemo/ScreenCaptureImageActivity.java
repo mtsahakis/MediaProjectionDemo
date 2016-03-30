@@ -1,6 +1,5 @@
 package com.mtsahakis.mediaprojectiondemo;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -15,7 +14,6 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
@@ -25,7 +23,6 @@ import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,11 +39,6 @@ public class ScreenCaptureImageActivity extends Activity {
     private static final String SCREENCAP_NAME = "screencap";
     private static final int VIRTUAL_DISPLAY_FLAGS = DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY | DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC;
     private static MediaProjection sMediaProjection;
-    private static final int RESULT_PERMS_INITIAL                   = 2909;
-    private static final int RESULT_PERMS_WRITE_EXTERNAL_STORAGE    = 2910;
-    private static final String[] PERMS_WRITE_EXTERNAL_STORAGE = new String[] {
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
 
     private MediaProjectionManager mProjectionManager;
     private ImageReader mImageReader;
@@ -189,12 +181,6 @@ public class ScreenCaptureImageActivity extends Activity {
                 Looper.loop();
             }
         }.start();
-
-        if (QueryPreferences.isFirstRun(this) && !PermissionUtils.canWriteExternalStorage(this)) {
-            if (PermissionUtils.useRunTimePermissions()) {
-                requestPermissions(PERMS_WRITE_EXTERNAL_STORAGE, RESULT_PERMS_INITIAL);
-            }
-        }
     }
 
     @Override
@@ -203,14 +189,20 @@ public class ScreenCaptureImageActivity extends Activity {
             sMediaProjection = mProjectionManager.getMediaProjection(resultCode, data);
 
             if (sMediaProjection != null) {
-                STORE_DIRECTORY = Environment.getExternalStorageDirectory().getAbsolutePath() + "/screenshots/";
-                File storeDirectory = new File(STORE_DIRECTORY);
-                if (!storeDirectory.exists()) {
-                    boolean success = storeDirectory.mkdirs();
-                    if(!success) {
-                        Log.e(TAG, "failed to create file storage directory.");
-                        return;
+                File externalFilesDir = getExternalFilesDir(null);
+                if (externalFilesDir != null) {
+                    STORE_DIRECTORY = externalFilesDir.getAbsolutePath() + "/screenshots/";
+                    File storeDirectory = new File(STORE_DIRECTORY);
+                    if (!storeDirectory.exists()) {
+                        boolean success = storeDirectory.mkdirs();
+                        if (!success) {
+                            Log.e(TAG, "failed to create file storage directory.");
+                            return;
+                        }
                     }
+                } else {
+                    Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
+                    return;
                 }
 
                 // display metrics
@@ -233,29 +225,8 @@ public class ScreenCaptureImageActivity extends Activity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if(requestCode == RESULT_PERMS_WRITE_EXTERNAL_STORAGE) {
-            if(PermissionUtils.canWriteExternalStorage(this)) {
-                startProjectionForReal();
-            }
-        }
-    }
-
     /****************************************** UI Widget Callbacks *******************************/
     private void startProjection() {
-        if (PermissionUtils.canWriteExternalStorage(this)) {
-            startProjectionForReal();
-        } else if (PermissionUtils.shouldShowRationalWriteExternalStorage(this)) {
-            if (PermissionUtils.useRunTimePermissions()) {
-                requestPermissions(PERMS_WRITE_EXTERNAL_STORAGE, RESULT_PERMS_WRITE_EXTERNAL_STORAGE);
-            }
-        } else {
-            Toast.makeText(this, "You need to grant permission to access external storage.", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void startProjectionForReal() {
         startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
     }
 
