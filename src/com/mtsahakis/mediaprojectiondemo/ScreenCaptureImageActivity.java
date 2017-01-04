@@ -82,7 +82,7 @@ public class ScreenCaptureImageActivity extends Activity {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                if (fos!=null) {
+                if (fos != null) {
                     try {
                         fos.close();
                     } catch (IOException ioe) {
@@ -90,11 +90,11 @@ public class ScreenCaptureImageActivity extends Activity {
                     }
                 }
 
-                if (bitmap!=null) {
+                if (bitmap != null) {
                     bitmap.recycle();
                 }
 
-                if (image!=null) {
+                if (image != null) {
                     image.close();
                 }
             }
@@ -102,26 +102,25 @@ public class ScreenCaptureImageActivity extends Activity {
     }
 
     private class OrientationChangeCallback extends OrientationEventListener {
-        public OrientationChangeCallback(Context context) {
+
+        OrientationChangeCallback(Context context) {
             super(context);
         }
 
         @Override
         public void onOrientationChanged(int orientation) {
-            synchronized (this) {
-                final int rotation = mDisplay.getRotation();
-                if (rotation != mRotation) {
-                    mRotation = rotation;
-                    try {
-                        // clean up
-                        if(mVirtualDisplay != null) mVirtualDisplay.release();
-                        if(mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
+            final int rotation = mDisplay.getRotation();
+            if (rotation != mRotation) {
+                mRotation = rotation;
+                try {
+                    // clean up
+                    if (mVirtualDisplay != null) mVirtualDisplay.release();
+                    if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
 
-                        // re-create virtual display depending on device width / height
-                        createVirtualDisplay();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    // re-create virtual display depending on device width / height
+                    createVirtualDisplay();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -134,9 +133,9 @@ public class ScreenCaptureImageActivity extends Activity {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if(mVirtualDisplay != null) mVirtualDisplay.release();
-                    if(mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
-                    if(mOrientationChangeCallback != null) mOrientationChangeCallback.disable();
+                    if (mVirtualDisplay != null) mVirtualDisplay.release();
+                    if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
+                    if (mOrientationChangeCallback != null) mOrientationChangeCallback.disable();
                     sMediaProjection.unregisterCallback(MediaProjectionStopCallback.this);
                 }
             });
@@ -153,7 +152,7 @@ public class ScreenCaptureImageActivity extends Activity {
         mProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
         // start projection
-        Button startButton = (Button)findViewById(R.id.startButton);
+        Button startButton = (Button) findViewById(R.id.startButton);
         startButton.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -163,7 +162,7 @@ public class ScreenCaptureImageActivity extends Activity {
         });
 
         // stop projection
-        Button stopButton = (Button)findViewById(R.id.stopButton);
+        Button stopButton = (Button) findViewById(R.id.stopButton);
         stopButton.setOnClickListener(new OnClickListener() {
 
             @Override
