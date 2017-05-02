@@ -59,7 +59,7 @@ public class ScreenCaptureImageActivity extends Activity {
             Bitmap bitmap = null;
 
             try {
-                image = mImageReader.acquireLatestImage();
+                image = reader.acquireLatestImage();
                 if (image != null) {
                     Image.Plane[] planes = image.getPlanes();
                     ByteBuffer buffer = planes[0].getBuffer();
