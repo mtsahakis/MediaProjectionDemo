@@ -6,9 +6,9 @@ import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
-import android.graphics.Point;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
@@ -18,7 +18,6 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.OrientationEventListener;
@@ -28,6 +27,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import androidx.core.util.Pair;
 
@@ -71,11 +71,11 @@ public class ScreenCaptureService extends Service {
 
     private static boolean isStartCommand(Intent intent) {
         return intent.hasExtra(RESULT_CODE) && intent.hasExtra(DATA)
-                && intent.hasExtra(ACTION) && intent.getStringExtra(ACTION).equals(START);
+                && intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), START);
     }
 
     private static boolean isStopCommand(Intent intent) {
-        return intent.hasExtra(ACTION) && intent.getStringExtra(ACTION).equals(STOP);
+        return intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), STOP);
     }
 
     private static int getVirtualDisplayFlags() {
@@ -85,12 +85,10 @@ public class ScreenCaptureService extends Service {
     private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Image image = null;
+
             FileOutputStream fos = null;
             Bitmap bitmap = null;
-
-            try {
-                image = mImageReader.acquireLatestImage();
+            try (Image image = mImageReader.acquireLatestImage()) {
                 if (image != null) {
                     Image.Plane[] planes = image.getPlanes();
                     ByteBuffer buffer = planes[0].getBuffer();
@@ -125,9 +123,6 @@ public class ScreenCaptureService extends Service {
                     bitmap.recycle();
                 }
 
-                if (image != null) {
-                    image.close();
-                }
             }
         }
     }
@@ -237,8 +232,7 @@ public class ScreenCaptureService extends Service {
             mMediaProjection = mpManager.getMediaProjection(resultCode, data);
             if (mMediaProjection != null) {
                 // display metrics
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
-                mDensity = metrics.densityDpi;
+                mDensity = Resources.getSystem().getDisplayMetrics().densityDpi;
                 WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
                 mDisplay = windowManager.getDefaultDisplay();
 
@@ -273,10 +267,8 @@ public class ScreenCaptureService extends Service {
     @SuppressLint("WrongConstant")
     private void createVirtualDisplay() {
         // get width and height
-        Point size = new Point();
-        mDisplay.getSize(size);
-        mWidth = size.x;
-        mHeight = size.y;
+        mWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        mHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
 
         // start capture reader
         mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);

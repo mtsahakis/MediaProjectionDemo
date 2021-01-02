@@ -16,8 +16,8 @@ import androidx.core.util.Pair;
 public class NotificationUtils {
 
     public static final int NOTIFICATION_ID = 1337;
-    private static String NOTIFICATION_CHANNEL_ID = "com.mtsahakis.mediaprojectiondemo.app";
-    private static String NOTIFICATION_CHANNEL_NAME = "com.mtsahakis.mediaprojectiondemo.app";
+    private static final String NOTIFICATION_CHANNEL_ID = "com.mtsahakis.mediaprojectiondemo.app";
+    private static final String NOTIFICATION_CHANNEL_NAME = "com.mtsahakis.mediaprojectiondemo.app";
 
     public static Pair<Integer, Notification> getNotification(@NonNull Context context) {
         createNotificationChannel(context);

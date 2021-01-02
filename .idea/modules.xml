@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="MediaProjectionDemo/app" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/github-MediaProjectionDemo.iml" filepath="$PROJECT_DIR$/.idea/modules/github-MediaProjectionDemo.iml" group="MediaProjectionDemo" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MediaProjectionDemo.iml" filepath="$PROJECT_DIR$/.idea/modules/MediaProjectionDemo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/MediaProjectionDemo.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/MediaProjectionDemo.app.iml" />
     </modules>
   </component>
 </project>
